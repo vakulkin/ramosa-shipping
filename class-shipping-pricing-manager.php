@@ -207,7 +207,7 @@ class ShippingPricingManager {
 				false,
 				false
 			),
-			'paczkomat_inpost_cod' => new ShippingMethod(
+			'Paczka Inpost (za pobraniem)' => new ShippingMethod(
 				[
 					new ShippingOption(
 						[],
@@ -227,7 +227,7 @@ class ShippingPricingManager {
 				false,
 				true
 			),
-			'kurier_inpost_non_cod' => new ShippingMethod(
+			'Kurier Inpost' => new ShippingMethod(
 				[
 					new ShippingOption(
 						[],

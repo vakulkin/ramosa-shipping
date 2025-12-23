@@ -8,8 +8,7 @@ tr.woocommerce-shipping-totals.shipping td {
     text-align: left!important;
 }
 tr.woocommerce-shipping-totals.shipping td {
-    padding: 0;
-    padding-bottom: 20px;
+    padding: 15px 0;
 }
 .woocommerce-shipping-methods {
     list-style: none;
@@ -41,12 +40,14 @@ tr.woocommerce-shipping-totals.shipping td {
 .woocommerce-shipping-methods label .woocommerce-Price-amount {
     color: #202124;
 }
-.woocommerce-shipping-methods input[type="radio"]:checked + label {
+.woocommerce-shipping-methods input[type="radio"]:checked + label,
+.woocommerce-shipping-methods li:only-child label {
     background: #1a73e8;
     color: #ffffff;
     border-color: #1a73e8;
 }
-.woocommerce-shipping-methods input[type="radio"]:checked + label .woocommerce-Price-amount {
+.woocommerce-shipping-methods input[type="radio"]:checked + label .woocommerce-Price-amount,
+.woocommerce-shipping-methods li:only-child label .woocommerce-Price-amount {
     color: #ffffff;
 }
 .woocommerce-shipping-methods label:hover {
