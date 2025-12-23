@@ -1,0 +1,54 @@
+tr.woocommerce-shipping-totals.shipping {
+    display: block;
+}
+tr.woocommerce-shipping-totals.shipping th,
+tr.woocommerce-shipping-totals.shipping td {
+    display: block;
+    width: 100%;
+    text-align: left!important;
+}
+tr.woocommerce-shipping-totals.shipping td {
+    padding: 0;
+    padding-bottom: 20px;
+}
+.woocommerce-shipping-methods {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.woocommerce-shipping-methods li {
+    margin: 0;
+}
+.woocommerce-shipping-methods input[type="radio"] {
+    display: none;
+}
+.woocommerce-shipping-methods label {
+    display: block;
+    background: #ffffff;
+    border: 1px solid #f1f3f4;
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin: 0;
+    font-weight: 500;
+    color: #202124;
+}
+.woocommerce-shipping-methods label .woocommerce-Price-amount {
+    color: #202124;
+}
+.woocommerce-shipping-methods input[type="radio"]:checked + label {
+    background: #1a73e8;
+    color: #ffffff;
+    border-color: #1a73e8;
+}
+.woocommerce-shipping-methods input[type="radio"]:checked + label .woocommerce-Price-amount {
+    color: #ffffff;
+}
+.woocommerce-shipping-methods label:hover {
+    border-color: #1a73e8;
+}

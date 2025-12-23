@@ -1,0 +1,11 @@
+<?php
+
+class ShippingOption {
+    public $categories; // Array of strings (e.g., ['mosaiki'])
+    public $tiers;      // Array of PricingTier objects
+
+    public function __construct($categories, $tiers) {
+        $this->categories = $categories;
+        $this->tiers = $tiers;
+    }
+}
