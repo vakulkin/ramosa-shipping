@@ -100,7 +100,7 @@ class ShippingPricingManager
                     )
                 ],
                 null,
-                9000,
+                null,
                 false,
                 null,
                 false,
