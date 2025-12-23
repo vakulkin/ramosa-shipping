@@ -228,6 +228,21 @@ class ShippingAdjuster
             return;
         }
 
+		// ??????
+        // Get limitations for debug
+        $max_weight_limit = null;
+        if (! $pricing_data->allow_multiple_packages) {
+            $last_range = end($pricing_data->ranges);
+            if ($last_range instanceof PricingTier) {
+                $max_weight_limit = $last_range->max_weight;
+            } else {
+                $max_weight_limit = $last_range[1];
+            }
+        }
+        $max_value_limit = $pricing_data->max_value;
+		// ???????
+
+
         // Check if the rate should be hidden based on weight, value, or dimensions
         if ($this->shipping_pricing_manager->should_hide_rate($package, $total_weight, $total_value, $pricing_data, $this->unit_converter)) {
             unset($rates[ $rate_key ]);
@@ -239,7 +254,15 @@ class ShippingAdjuster
         $new_cost = $this->shipping_pricing_manager->calculate_cost($total_weight, $weight_ranges);
         if ($new_cost !== null) {
             $rates[ $rate_key ]->cost = $new_cost;
-            $rates[ $rate_key ]->label = $rate->label . ' - ' . $total_weight . ' kg';
+            $debug_info = ' - Weight: ' . $total_weight . 'kg';
+            if ($max_weight_limit) {
+                $debug_info .= ' (max: ' . $max_weight_limit . 'kg)';
+            }
+            $debug_info .= ', Value: ' . $total_value . ' PLN';
+            if ($max_value_limit) {
+                $debug_info .= ' (max: ' . $max_value_limit . ' PLN)';
+            }
+            $rates[ $rate_key ]->label = $rate->label . $debug_info;
         }
     }
 }
