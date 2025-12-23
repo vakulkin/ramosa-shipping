@@ -87,6 +87,10 @@ class ShippingAdjuster {
 	}
 
 	public function filter_payment_gateways( $gateways ) {
+		if ( ! function_exists( 'WC' ) || ! WC()->session ) {
+			return $gateways;
+		}
+
 		$chosen_methods = WC()->session->get( 'chosen_shipping_methods' );
 		if ( ! $chosen_methods || ! isset( $chosen_methods[0] ) ) {
 			return $gateways;
