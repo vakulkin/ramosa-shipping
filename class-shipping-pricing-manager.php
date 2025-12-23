@@ -50,7 +50,6 @@ class ShippingPricingManager
                 ],
                 null,
                 null,
-                null,
                 true,
                 null,
                 false,
@@ -84,8 +83,7 @@ class ShippingPricingManager
                     )
                 ],
                 null,
-                null,
-                null,
+                9000,
                 true,
                 null,
                 false,
@@ -102,7 +100,6 @@ class ShippingPricingManager
                     )
                 ],
                 null,
-                300,
                 9000,
                 false,
                 null,
@@ -120,7 +117,6 @@ class ShippingPricingManager
                     )
                 ],
                 null,
-                300,
                 9000,
                 false,
                 null,
@@ -146,7 +142,6 @@ class ShippingPricingManager
                 ],
                 null,
                 null,
-                null,
                 false,
                 null,
                 false,
@@ -170,8 +165,7 @@ class ShippingPricingManager
                     ),
                 ],
                 null,
-                null,
-                null,
+                9000,
                 false,
                 null,
                 false,
@@ -191,7 +185,6 @@ class ShippingPricingManager
                     'largest' => 60,
                 ],
                 null,
-                null,
                 false,
                 50,
                 false,
@@ -210,8 +203,7 @@ class ShippingPricingManager
                     'second_largest' => 80,
                     'largest' => 60,
                 ],
-                null,
-                null,
+                9000,
                 false,
                 null,
                 false,
@@ -226,7 +218,6 @@ class ShippingPricingManager
                         ]
                     )
                 ],
-                null,
                 null,
                 null,
                 false,
@@ -316,10 +307,14 @@ class ShippingPricingManager
     public function should_hide_rate($package, $total_weight, $total_value, $pricing_data, $unit_converter)
     {
         // Determine effective weight limit
-        $max_weight_limit = $pricing_data->max_weight;
-        if ($max_weight_limit === null && ! $pricing_data->allow_multiple_packages) {
+        $max_weight_limit = null;
+        if (! $pricing_data->allow_multiple_packages) {
             $last_range = end($pricing_data->ranges);
-            $max_weight_limit = $last_range[1];
+            if ($last_range instanceof PricingTier) {
+                $max_weight_limit = $last_range->max_weight;
+            } else {
+                $max_weight_limit = $last_range[1];
+            }
         }
 
         // Check weight limit
