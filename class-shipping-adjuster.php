@@ -26,6 +26,16 @@ class ShippingAdjuster
 
         // Validate cart items before calculate totals
         add_action('woocommerce_before_calculate_totals', array( $this, 'validate_cart_items' ));
+
+        add_filter('woocommerce_cart_needs_shipping', array( $this, 'disable_shipping_calculation' ));
+    }
+
+    public function disable_shipping_calculation($needs_shipping)
+    {
+        if (is_cart()) {
+            return false;
+        }
+        return $needs_shipping;
     }
 
     public function reset_shipping_cache()
@@ -227,22 +237,6 @@ class ShippingAdjuster
             unset($rates[ $rate_key ]);
             return;
         }
-
-		// ??????
-        // Get limitations for debug
-        $max_weight_limit = null;
-        if (! $pricing_data->allow_multiple_packages) {
-            $last_range = end($pricing_data->ranges);
-            if ($last_range instanceof PricingTier) {
-                $max_weight_limit = $last_range->max_weight;
-            } else {
-                $max_weight_limit = $last_range[1];
-            }
-        }
-        $max_value_limit = $pricing_data->max_value;
-		// ???????
-
-
         // Check if the rate should be hidden based on weight, value, or dimensions
         if ($this->shipping_pricing_manager->should_hide_rate($package, $total_weight, $total_value, $pricing_data, $this->unit_converter)) {
             unset($rates[ $rate_key ]);
@@ -254,15 +248,7 @@ class ShippingAdjuster
         $new_cost = $this->shipping_pricing_manager->calculate_cost($total_weight, $weight_ranges);
         if ($new_cost !== null) {
             $rates[ $rate_key ]->cost = $new_cost;
-            $debug_info = ' - Weight: ' . $total_weight . 'kg';
-            if ($max_weight_limit) {
-                $debug_info .= ' (max: ' . $max_weight_limit . 'kg)';
-            }
-            $debug_info .= ', Value: ' . $total_value . ' PLN';
-            if ($max_value_limit) {
-                $debug_info .= ' (max: ' . $max_value_limit . ' PLN)';
-            }
-            $rates[ $rate_key ]->label = $rate->label . $debug_info;
+            $rates[ $rate_key ]->label = $rate->label . ' - ' . $total_weight . ' kg';
         }
     }
 }
