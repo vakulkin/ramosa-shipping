@@ -126,7 +126,7 @@ class ShippingPricingManager
             'Paczka Geodis' => new ShippingMethod(
                 [
                     new ShippingOption(
-                        [ 'mosaiki' ],
+                        [ 'mozaiki' ],
                         [
                             new PricingTier(0, 10, 80),
                             new PricingTier(10, 20, 85),
@@ -150,7 +150,7 @@ class ShippingPricingManager
             'Paczka Geodis (za pobraniem)' => new ShippingMethod(
                 [
                     new ShippingOption(
-                        [ 'mosaiki' ],
+                        [ 'mozaiki' ],
                         [
                             new PricingTier(0, 10, 110),
                             new PricingTier(10, 20, 115),
