@@ -224,7 +224,7 @@ class ShippingAdjuster
     {
         if ($pricing_data->sample_price !== null) {
             $rates[ $rate_key ]->cost = $pricing_data->sample_price;
-            $rates[ $rate_key ]->taxes = array(); // Reset taxes
+            // $rates[ $rate_key ]->taxes = array(); // Reset taxes
         } else {
             unset($rates[ $rate_key ]);
         }
