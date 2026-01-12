@@ -185,6 +185,7 @@ class ShippingPricingManager {
 				],
 				[
 					'largest' => 60,
+                    'second_largest' => null,
 				],
 				null,
 				false,
@@ -203,6 +204,7 @@ class ShippingPricingManager {
 				],
 				[
 					'largest' => 60,
+                    'second_largest' => null,
 				],
 				9000,
 				false,
