@@ -292,29 +292,45 @@ class ShippingPricingManager {
 		$length = $product->get_length();
 		$width = $product->get_width();
 		$height = $product->get_height();
-		if ( ! $length || ! $width || ! $height ) {
+		
+		// Collect available dimensions
+		$dims = array_filter( [ $length, $width, $height ], function( $dim ) {
+			return $dim !== '' && $dim !== null && $dim !== false;
+		} );
+		
+		// Need at least 2 dimensions
+		if ( count( $dims ) < 2 ) {
 			return false;
 		}
-		$length = $unit_converter->convert_dimension_to_cm( $length );
-		$width = $unit_converter->convert_dimension_to_cm( $width );
-		$height = $unit_converter->convert_dimension_to_cm( $height );
-		$dims = [ $length, $width, $height ];
-		sort( $dims );
+		
+		// Convert to cm and sort
+		$dims = array_map( function( $dim ) use ( $unit_converter ) {
+			return $unit_converter->convert_dimension_to_cm( $dim );
+		}, $dims );
+		rsort( $dims );
+		
 		return ( $max_dimensions['second_largest'] === null || $dims[1] <= $max_dimensions['second_largest'] )
-			&& ( $max_dimensions['largest'] === null || $dims[2] <= $max_dimensions['largest'] );
+			&& ( $max_dimensions['largest'] === null || $dims[0] <= $max_dimensions['largest'] );
 	}
 
 	public function should_hide_rate( $package, $total_weight, $total_value, $pricing_data, $unit_converter ) {
 		// Determine effective weight limit
 		$max_weight_limit = null;
-		if ( ! $pricing_data->allow_multiple_packages ) {
-			$last_range = end( $pricing_data->ranges );
-			if ( $last_range instanceof PricingTier ) {
-				$max_weight_limit = $last_range->max_weight;
+		if ( ! $pricing_data->allow_multiple_packages && ! empty( $pricing_data->ranges ) ) {
+			// Find the highest max_weight across all ShippingOption tiers
+			foreach ( $pricing_data->ranges as $shipping_option ) {
+				if ( $shipping_option instanceof ShippingOption && ! empty( $shipping_option->tiers ) ) {
+					$last_tier = end( $shipping_option->tiers );
+					if ( $last_tier instanceof PricingTier ) {
+						if ( $max_weight_limit === null || $last_tier->max_weight > $max_weight_limit ) {
+							$max_weight_limit = $last_tier->max_weight;
+						}
+					}
+				}
 			}
 		}
 
-		// Check weight limit
+		// Check weight limit - hide shipping method if weight exceeds limit and multiple packages not allowed
 		if ( $max_weight_limit !== null && $total_weight > $max_weight_limit ) {
 			return true;
 		}

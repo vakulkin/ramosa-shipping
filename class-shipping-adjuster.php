@@ -223,9 +223,24 @@ class ShippingAdjuster
     private function apply_sample_pricing(&$rates, $rate_key, $pricing_data)
     {
         if ($pricing_data->sample_price !== null) {
-            $rates[ $rate_key ]->cost = $pricing_data->sample_price;
+            $this->set_rate_price_with_tax($rates[$rate_key], $pricing_data->sample_price);
         } else {
             unset($rates[ $rate_key ]);
+        }
+    }
+
+    private function set_rate_price_with_tax(&$rate, $price_incl_tax)
+    {
+        $tax_rates = WC_Tax::get_shipping_tax_rates();
+        
+        if (!empty($tax_rates)) {
+            $taxes = WC_Tax::calc_tax($price_incl_tax, $tax_rates, true); // true = price includes tax
+            $tax_amount = array_sum($taxes);
+            $rate->cost = $price_incl_tax - $tax_amount;
+            $rate->taxes = $taxes;
+        } else {
+            $rate->cost = $price_incl_tax;
+            $rate->taxes = array();
         }
     }
 
@@ -246,7 +261,7 @@ class ShippingAdjuster
         $weight_ranges = $pricing_data->ranges;
         $new_cost = $this->shipping_pricing_manager->calculate_cost($total_weight, $weight_ranges);
         if ($new_cost !== null) {
-            $rates[ $rate_key ]->cost = $new_cost;
+            $this->set_rate_price_with_tax($rates[$rate_key], $new_cost);
             $rates[ $rate_key ]->label = $rate->label . ' - ' . $total_weight . ' kg';
         }
     }
