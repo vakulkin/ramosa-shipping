@@ -177,7 +177,7 @@ class ShippingPricingManager {
 			'Paczkomat Inpost' => new ShippingMethod(
 				[
 					new ShippingOption(
-						[],
+						['mozaiki', 'listwy'],
 						[
 							new PricingTier( 0, 30, 25 ),
 						]
@@ -196,7 +196,7 @@ class ShippingPricingManager {
 			'Paczkomat Inpost (za pobraniem)' => new ShippingMethod(
 				[
 					new ShippingOption(
-						[],
+						['mozaiki', 'listwy'],
 						[
 							new PricingTier( 0, 30, 35 ),
 						]
@@ -311,8 +311,6 @@ class ShippingPricingManager {
 			$last_range = end( $pricing_data->ranges );
 			if ( $last_range instanceof PricingTier ) {
 				$max_weight_limit = $last_range->max_weight;
-			} else {
-				$max_weight_limit = $last_range[1];
 			}
 		}
 
