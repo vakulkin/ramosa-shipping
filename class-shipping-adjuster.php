@@ -167,13 +167,6 @@ class ShippingAdjuster
                 continue;
             }
 
-            // Process shipping options based on categories
-            $found = $this->process_shipping_options($pricing_data, $package);
-            if (! $found) {
-                unset($rates[ $rate_key ]);
-                continue;
-            }
-
             // Apply pricing based on order type
             if ($is_sample_order) {
                 $this->apply_sample_pricing($rates, $rate_key, $pricing_data);
@@ -191,31 +184,6 @@ class ShippingAdjuster
             $sample_plugin = Sample_Products_Ordering::instance();
             $composition = $sample_plugin->get_cart_composition();
             return $composition['has_samples'] && ! $composition['has_regular'];
-        }
-        return false;
-    }
-
-    private function process_shipping_options(&$pricing_data, $package)
-    {
-        if (is_array($pricing_data->ranges) && count($pricing_data->ranges) > 0) {
-            foreach ($pricing_data->ranges as $option) {
-                $matches = empty($option->categories);
-                if (! $matches && $option->categories) {
-                    foreach ($option->categories as $category_slug) {
-                        if ($this->cart_analyzer->cart_has_category($package, $category_slug)) {
-                            $matches = true;
-                            break;
-                        }
-                    }
-                }
-                if ($matches) {
-                    // Convert tiers to array format for compatibility
-                    $pricing_data->ranges = array_map(function ($tier) {
-                        return [ $tier->min_weight, $tier->max_weight, $tier->cost ];
-                    }, $option->tiers);
-                    return true;
-                }
-            }
         }
         return false;
     }
@@ -252,7 +220,7 @@ class ShippingAdjuster
             return;
         }
         // Check if the rate should be hidden based on weight, value, or dimensions
-        if ($this->shipping_pricing_manager->should_hide_rate($package, $total_weight, $total_value, $pricing_data, $this->unit_converter)) {
+        if ($this->shipping_pricing_manager->should_hide_rate($package, $total_weight, $total_value, $pricing_data, $this->unit_converter, $this->cart_analyzer)) {
             unset($rates[ $rate_key ]);
             return;
         }
