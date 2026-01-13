@@ -1,7 +1,8 @@
 <?php
 
 require_once 'class-pricing-tier.php';
-require_once 'class-shipping-option.php';
+require_once 'class-shipping-range.php';
+require_once 'class-validation-result.php';
 
 class ShippingPricingManager {
 	private $pricing_ranges;
@@ -14,7 +15,7 @@ class ShippingPricingManager {
 		$this->pricing_ranges = [
 			'Przesyłka paletowa Geodis' => new ShippingMethod(
 				[
-					new ShippingOption(
+					new ShippingRange(
 						[],
 						[
 							new PricingTier( 0, 100, 150 ),
@@ -54,7 +55,7 @@ class ShippingPricingManager {
 			),
 			'Przesyłka paletowa Geodis (za pobraniem)' => new ShippingMethod(
 				[
-					new ShippingOption(
+					new ShippingRange(
 						[],
 						[
 							new PricingTier( 0, 100, 180 ),
@@ -88,7 +89,7 @@ class ShippingPricingManager {
 			),
 			'Paleta Geodis' => new ShippingMethod(
 				[
-					new ShippingOption(
+					new ShippingRange(
 						[],
 						[
 							new PricingTier( 0, 100, 95 ),
@@ -108,7 +109,7 @@ class ShippingPricingManager {
 			),
 			'Paleta Geodis (za pobraniem)' => new ShippingMethod(
 				[
-					new ShippingOption(
+					new ShippingRange(
 						[],
 						[
 							new PricingTier( 0, 100, 125 ),
@@ -128,7 +129,7 @@ class ShippingPricingManager {
 			),
 			'Paczka Geodis' => new ShippingMethod(
 				[
-					new ShippingOption(
+					new ShippingRange(
 						[ 'mozaiki' ],
 						[
 							new PricingTier( 0, 10, 80 ),
@@ -136,7 +137,7 @@ class ShippingPricingManager {
 							new PricingTier( 20, 30, 95 ),
 						]
 					),
-					new ShippingOption(
+					new ShippingRange(
 						[ 'listwy' ],
 						[
 							new PricingTier( 0, 30, 80 ),
@@ -152,7 +153,7 @@ class ShippingPricingManager {
 			),
 			'Paczka Geodis (za pobraniem)' => new ShippingMethod(
 				[
-					new ShippingOption(
+					new ShippingRange(
 						[ 'mozaiki' ],
 						[
 							new PricingTier( 0, 10, 110 ),
@@ -160,7 +161,7 @@ class ShippingPricingManager {
 							new PricingTier( 20, 30, 125 ),
 						]
 					),
-					new ShippingOption(
+					new ShippingRange(
 						[ 'listwy' ],
 						[
 							new PricingTier( 0, 30, 110 ),
@@ -176,7 +177,7 @@ class ShippingPricingManager {
 			),
 			'Paczkomat Inpost' => new ShippingMethod(
 				[
-					new ShippingOption(
+					new ShippingRange(
 						[ 'mozaiki', 'listwy' ],
 						[
 							new PricingTier( 0, 30, 25 ),
@@ -195,7 +196,7 @@ class ShippingPricingManager {
 			),
 			'Paczkomat Inpost (za pobraniem)' => new ShippingMethod(
 				[
-					new ShippingOption(
+					new ShippingRange(
 						[ 'mozaiki', 'listwy' ],
 						[
 							new PricingTier( 0, 30, 35 ),
@@ -214,7 +215,7 @@ class ShippingPricingManager {
 			),
 			'Kurier Inpost' => new ShippingMethod(
 				[
-					new ShippingOption(
+					new ShippingRange(
 						[],
 						[
 							new PricingTier( 0, 30, 30 ),
@@ -235,49 +236,44 @@ class ShippingPricingManager {
 		return $this->pricing_ranges[ $key ] ?? null;
 	}
 
-	public function calculate_cost( $total_weight, $weight_ranges ) {
+	public function calculate_cost( $total_weight, $tiers ) {
 		$new_cost = null;
-		foreach ( $weight_ranges as $range ) {
-			if ( $range instanceof ShippingOption ) {
-				foreach ( $range->tiers as $tier ) {
-					$min = $tier->min_weight;
-					$max = $tier->max_weight;
-					$price = $tier->cost;
-					if ( $total_weight >= $min && $total_weight <= $max ) {
-						$new_cost = $price;
-						break 2;
-					}
-				}
+		
+		// Find the matching tier for the total weight
+		foreach ( $tiers as $tier ) {
+			$min = $tier->min_weight;
+			$max = $tier->max_weight;
+			$price = $tier->cost;
+			
+			if ( $total_weight >= $min && $total_weight <= $max ) {
+				$new_cost = $price;
+				break;
 			}
 		}
 
-		if ( $new_cost === null && $total_weight > 0 ) {
-			$last_range = end( $weight_ranges );
-			if ( $last_range instanceof PricingTier ) {
-				$last_max = $last_range->max_weight;
-				$last_cost = $last_range->cost;
-			} else {
-				$last_max = $last_range[1];
-				$last_cost = $last_range[2];
-			}
+		// If no tier matched and weight > 0, calculate based on multiple packages
+		if ( $new_cost === null && $total_weight > 0 && count( $tiers ) > 0 ) {
+			$last_tier = end( $tiers );
+			$last_max = $last_tier->max_weight;
+			$last_cost = $last_tier->cost;
+			
 			$num_full = floor( $total_weight / ( $last_max ? $last_max : 1 ) );
 			$remainder = $total_weight % $last_max;
 			$remainder_cost = 0;
+			
 			if ( $remainder > 0 ) {
-				foreach ( $weight_ranges as $range ) {
-					if ( $range instanceof PricingTier ) {
-						$min = $range->min_weight;
-						$max = $range->max_weight;
-						$price = $range->cost;
-					} else {
-						list( $min, $max, $price ) = $range;
-					}
+				foreach ( $tiers as $tier ) {
+					$min = $tier->min_weight;
+					$max = $tier->max_weight;
+					$price = $tier->cost;
+					
 					if ( $remainder >= $min && $remainder <= $max ) {
 						$remainder_cost = $price;
 						break;
 					}
 				}
 			}
+			
 			$new_cost = $num_full * $last_cost + $remainder_cost;
 		}
 
@@ -313,112 +309,95 @@ class ShippingPricingManager {
 			&& ( $max_dimensions['largest'] === null || $dims[0] <= $max_dimensions['largest'] );
 	}
 
-	public function should_hide_rate( $package, $total_weight, $total_value, $pricing_data, $unit_converter, $cart_analyzer ) {
+	public function find_valid_range( $package, $total_weight, $total_value, $pricing_data, $unit_converter, $cart_analyzer ) {
+		if ( ! $this->has_valid_ranges( $pricing_data ) ) {
+			return ValidationResult::hide();
+		}
 
-		// Check if at least one shipping option satisfies the conditions
-		$has_valid_option = false;
-		$max_weight_limit = null;
-
-		if ( is_array( $pricing_data->ranges ) && count( $pricing_data->ranges ) > 0 ) {
-			foreach ( $pricing_data->ranges as $option ) {
-				// Check if option is a ShippingOption object (not already converted to array)
-				if ( ! is_object( $option ) || ! isset( $option->categories ) ) {
-					continue;
-				}
-
-				// Check category match
-				$matches = empty( $option->categories );
-				if ( ! $matches && $option->categories ) {
-					foreach ( $option->categories as $category_slug ) {
-						if ( $cart_analyzer->cart_has_category( $package, $category_slug ) ) {
-							$matches = true;
-							break;
-						}
-					}
-				}
-
-				if ( ! $matches ) {
-					continue;
-				}
-
-				// Check dimensions for this option
-				$dimensions_ok = true;
-				if ( $pricing_data->max_dimensions !== null ) {
-					foreach ( $package['contents'] as $item ) {
-						$product = $item['data'];
-						if ( ! $this->product_fits_dimensions( $product, $pricing_data->max_dimensions, $unit_converter ) ) {
-							$dimensions_ok = false;
-							break;
-						}
-					}
-				}
-
-				if ( ! $dimensions_ok ) {
-					continue;
-				}
-
-				// Check max value for this option
-				if ( $pricing_data->max_value !== null && $total_value > $pricing_data->max_value ) {
-					continue;
-				}
-
-				// This option satisfies all conditions except weight
-				$has_valid_option = true;
-
-				// Get max weight limit from this option's last tier
-				if ( ! $pricing_data->allow_multiple_packages && ! empty( $option->tiers ) ) {
-					$last_tier = end( $option->tiers );
-					$max_weight_limit = $last_tier->max_weight;
-				}
-
-				// If we found a valid option, we can stop checking
-				break;
+		foreach ( $pricing_data->ranges as $range ) {
+			if ( ! $this->is_shipping_range( $range ) ) {
+				continue;
 			}
+
+			if ( ! $this->matches_categories( $range, $package, $cart_analyzer ) ) {
+				continue;
+			}
+
+			if ( ! $this->fits_dimensions( $package, $pricing_data->max_dimensions, $unit_converter ) ) {
+				continue;
+			}
+
+			if ( ! $this->is_within_max_value( $total_value, $pricing_data->max_value ) ) {
+				continue;
+			}
+
+			if ( $this->exceeds_weight_limit( $range, $total_weight, $pricing_data->allow_multiple_packages ) ) {
+				return ValidationResult::hide();
+			}
+
+			return ValidationResult::show( $range );
 		}
 
-		// If no option satisfies the conditions (category, dimensions, value), hide the rate
-		if ( ! $has_valid_option ) {
+		return ValidationResult::hide();
+	}
+
+	private function has_valid_ranges( $pricing_data ) {
+		return is_array( $pricing_data->ranges ) && count( $pricing_data->ranges ) > 0;
+	}
+
+	private function is_shipping_range( $range ) {
+		return is_object( $range ) && isset( $range->categories );
+	}
+
+	private function matches_categories( $range, $package, $cart_analyzer ) {
+		if ( empty( $range->categories ) ) {
 			return true;
 		}
 
-		// Check weight limit - hide shipping method if weight exceeds limit and multiple packages not allowed
-		if ( $max_weight_limit !== null && $total_weight > $max_weight_limit ) {
-			return true;
+		foreach ( $range->categories as $category_slug ) {
+			if ( $cart_analyzer->cart_has_category( $package, $category_slug ) ) {
+				return true;
+			}
 		}
 
 		return false;
 	}
 
-	/**
-	 * Find and return the matching shipping option from the pricing data
-	 * This is used by the shipping adjuster to get the correct option for pricing
-	 */
-	// public function find_matching_option( $pricing_data, $package, $cart_analyzer ) {
-	// 	if ( ! is_array( $pricing_data->ranges ) || count( $pricing_data->ranges ) === 0 ) {
-	// 		return null;
-	// 	}
+	private function fits_dimensions( $package, $max_dimensions, $unit_converter ) {
+		if ( $max_dimensions === null ) {
+			return true;
+		}
 
-	// 	foreach ( $pricing_data->ranges as $option ) {
-	// 		// Check if option is a ShippingOption object
-	// 		if ( ! is_object( $option ) || ! isset( $option->categories ) ) {
-	// 			continue;
-	// 		}
+		foreach ( $package['contents'] as $item ) {
+			$product = $item['data'];
+			if ( ! $this->product_fits_dimensions( $product, $max_dimensions, $unit_converter ) ) {
+				return false;
+			}
+		}
 
-	// 		$matches = empty( $option->categories );
-	// 		if ( ! $matches && $option->categories ) {
-	// 			foreach ( $option->categories as $category_slug ) {
-	// 				if ( $cart_analyzer->cart_has_category( $package, $category_slug ) ) {
-	// 					$matches = true;
-	// 					break;
-	// 				}
-	// 			}
-	// 		}
+		return true;
+	}
 
-	// 		if ( $matches ) {
-	// 			return $option;
-	// 		}
-	// 	}
+	private function is_within_max_value( $total_value, $max_value ) {
+		return $max_value === null || $total_value <= $max_value;
+	}
 
-	// 	return null;
-	// }
+	private function exceeds_weight_limit( $range, $total_weight, $allow_multiple_packages ) {
+		if ( $allow_multiple_packages ) {
+			return false;
+		}
+
+		$max_weight_limit = $this->get_max_weight_from_range( $range );
+		
+		return $max_weight_limit !== null && $total_weight > $max_weight_limit;
+	}
+
+	private function get_max_weight_from_range( $range ) {
+		if ( empty( $range->tiers ) ) {
+			return null;
+		}
+
+		$last_tier = end( $range->tiers );
+		return $last_tier->max_weight;
+	}
 }

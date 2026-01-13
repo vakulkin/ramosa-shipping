@@ -1,6 +1,6 @@
 <?php
 
-class ShippingOption {
+class ShippingRange {
     public $categories; // Array of strings (e.g., ['mozaiki'])
     public $tiers;      // Array of PricingTier objects
 

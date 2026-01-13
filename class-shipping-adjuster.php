@@ -219,15 +219,19 @@ class ShippingAdjuster
             unset($rates[ $rate_key ]);
             return;
         }
-        // Check if the rate should be hidden based on weight, value, or dimensions
-        if ($this->shipping_pricing_manager->should_hide_rate($package, $total_weight, $total_value, $pricing_data, $this->unit_converter, $this->cart_analyzer)) {
+        
+        // Find valid range and check if rate should be hidden
+        $result = $this->shipping_pricing_manager->find_valid_range($package, $total_weight, $total_value, $pricing_data, $this->unit_converter, $this->cart_analyzer);
+        
+        if ($result->should_hide()) {
             unset($rates[ $rate_key ]);
             return;
         }
 
-        // Apply weight-based adjustments
-        $weight_ranges = $pricing_data->ranges;
-        $new_cost = $this->shipping_pricing_manager->calculate_cost($total_weight, $weight_ranges);
+        // Apply weight-based adjustments using the matched range's tiers
+        $matched_range = $result->get_matched_range();
+        $new_cost = $this->shipping_pricing_manager->calculate_cost($total_weight, $matched_range->tiers);
+        
         if ($new_cost !== null) {
             $this->set_rate_price_with_tax($rates[$rate_key], $new_cost);
             $rates[ $rate_key ]->label = $rate->label . ' - ' . $total_weight . ' kg';
